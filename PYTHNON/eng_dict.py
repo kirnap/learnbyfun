@@ -13,8 +13,8 @@ from bs4 import BeautifulSoup
 # Here urlopen returns 403 forbidden 
 #response = urllib2.urlopen (url + query ).read()
 
-# Instead of that if I use that, I couldn't be able to succesfully retrieve the text that I want,
-# I checked with one of the online html editor to retrieve html document back and couldn't see the same output page
+# I couldn't be able to succesfully retrieve the text that I want,
+# I checked with one of the online html editor to retrieve html document back and couldn't see the same output page, that is not same output with google-chrome
 #response2 = requests.get(url + query)
 #soup = BeautifulSoup(response2.content)
 

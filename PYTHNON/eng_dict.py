@@ -1,6 +1,7 @@
 # command line English Dictionary, written by Omer Kirnap
 # Usage python eng_dict.py
 import urllib2
+import sys
 from bs4 import BeautifulSoup
 #import urllib
 
@@ -21,28 +22,31 @@ from bs4 import BeautifulSoup
 
 ##### Solution from another page
 url2 = "http://googledictionary.freecollocation.com/meaning?word="
-query2 = raw_input("What do you want to look for meaning? >> ")
-rep = urllib2.urlopen((url2+query2)).read()
-soup = BeautifulSoup(rep)
-omer = soup.find('div', {'class' : 'std'}).text.split()
+#query2 = raw_input("What do you want to look for meaning? >> ")
 
 
-
-counter = 0
-for item in omer:
-    if item == '-' and counter == 0:
-        print('\n  1.') , 
-        counter += 2
-    else:
-        if counter == 0:
-            print(item) ,
+def get_mean(query):
+    rep = urllib2.urlopen((url2+query)).read()
+    soup = BeautifulSoup(rep)
+    meaningful_text = soup.find('div', {'class' : 'std'}).text.split()
+    counter = 0
+    for item in meaningful_text:
+        if item == '-' and counter == 0:
+            print('\n  1.') , 
+            counter += 2
         else:
-            if item == '-':
-                print('\n  '+str(counter)+'.') ,
-            elif item[0].isupper():
-                counter -= 1
-                print('\n' + item) ,
-            else:
+            if counter == 0:
                 print(item) ,
+            else:
+                if item == '-':
+                    print('\n  '+str(counter)+'.') ,
+                elif item[0].isupper():
+                    counter -= 1
+                    print('\n' + item) ,
+                else:
+                    print(item) ,
 
+
+if __name__ == '__main__':
+    get_mean(sys.argv[1])
 

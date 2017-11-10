@@ -2,6 +2,7 @@
 # Usage python eng_dict.py
 import urllib2
 import sys
+import bs4
 from bs4 import BeautifulSoup
 #import urllib
 
@@ -21,42 +22,37 @@ from bs4 import BeautifulSoup
 
 
 ##### Solution from another page
+## I would like to thank Ozan Can Altiok for his suggestion
 url2 = "http://googledictionary.freecollocation.com/meaning?word="
-#query2 = raw_input("What do you want to look for meaning? >> ")
-
-def retrieve_sentence(ugly_text):
-    """
-    Retrieves a sentence from a given list
-    """
-    alist = ugly_text.text.split()
-    sents = []
-    sent = ""
-    for item in alist:
-        if item != "-" and item != alist[-1]:
-            sent += item + " "
-        #elif item == alist[-1]:
-        #    sents.append(sent)
-        else:
-            sents.append(sent)
-            sent = ""
-    return sents
-
 
 
 def get_mean(query):
     rep = urllib2.urlopen((url2+query)).read()
     soup = BeautifulSoup(rep, "html.parser")
+    lst = soup.find_all('ol')
     #meaningful_text = soup.find('div', {'class' : 'std'}).text.split()
-    #color:#767676;list-style:none
-    all_examples = soup.find_all(attrs={"style" : "color:#767676;list-style:none"})
-    alltxt = soup.find_all(attrs={"style" : "list-style:decimal"})
-    for i in range(len(alltxt) - 1):
-        s = list(retrieve_sentence(alltxt[i]) - retrieve_sentence(alltxt[i+1]))
-        for item in s:
-            print item
-        
+    for i in range(len(lst)-1):
+	trimmed = [item for item in lst[i].text.split('\n') if len(item.strip())>0]
+	ind = 0
+	while ind < len(trimmed):
+	    if trimmed[ind] == u'-':
+		print u'   -%s' % trimmed[ind+1].strip()
+		ind = ind+2
+	    else:
+		print trimmed[ind].strip()
+		ind = ind+1
+
         
 
+
+
+
+if __name__ == '__main__':
+    get_mean(sys.argv[1])
+
+
+	
+# Dead code	
     # counter = 0
     # for item in meaningful_text:
     #     if item == '-' and counter == 0:
@@ -74,8 +70,3 @@ def get_mean(query):
     #                 print('\n' + item) ,
     #             else:
     #                 print(item) ,
-
-
-if __name__ == '__main__':
-    get_mean(sys.argv[1])
-

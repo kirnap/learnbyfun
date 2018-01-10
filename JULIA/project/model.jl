@@ -102,7 +102,7 @@ function predict(model, alldata)
         query1 = w_att2 * hprev # hprev previous time step decoder
         query = hcat(query1, similar(query1, A, B-decbs[i]))
         q2 = reshape(query, (A, B, 1))
-        q3 = tanh.(preatt2 .+ q2)
+        q3 = tanh.(preatt .+ q2)
         q4 = reshape(q3, A, B*T)
         q5 = w_atta * q4
         q6 = reshape(q5, B, T)
@@ -117,11 +117,14 @@ function predict(model, alldata)
         out = wy * vcat(context, h_dec) .+ by
         push!(outs, out)
     end
-    return outs
+    return hcat(outs...)
 end
 
 
 function loss(model, alldata)
-    
-    
+    encd, decd = alldata
+    decx, _ = decd
+    ypreds = predict(model, alldata)
+    return nll(ypreds, decx)
 end
+lossgradient = gradloss(loss)

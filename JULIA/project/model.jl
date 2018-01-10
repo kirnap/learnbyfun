@@ -10,6 +10,9 @@ enc_att(model) = model[7]
 dec_att(model) = model[8]
 alp_att(model) = model[9]
 
+wout(model)    = model[10]
+bout(model)    = model[11]
+
 function initmodel(envsize, devsize, eembed, deembed, hidden, attn; rnnType=:lstm, dropout=(0.0, 0.0, 0.0))
     f = (gpu() >= 0 ? KnetArray{Float32} : Array{Float32})
     w(d...) = f(xavier(Float32, d...))
@@ -34,7 +37,8 @@ function initmodel(envsize, devsize, eembed, deembed, hidden, attn; rnnType=:lst
     push!(model, w(1, attn)) # attention MLP output side
 
     # output weight and bias
-    push!(model, w)
+    push!(model, w(devsize, 2*hidden)) # output w
+    push!(model, f(zeros(devsize, 1))) # output b
     return model
 end
 
@@ -73,25 +77,29 @@ function predict(model, alldata)
     decx, decbs = decdata
     wembed_d, rdec, wrdec = wdec(model), dec_r(model), dec_wr(model)
 
+    # output
+    wy, by = wout(model), bout(model)
+
+
     hf = reshape(hf, size(hf)[1], size(hf)[2])
     cf = reshape(cf, size(cf)[1], size(cf)[2])
-    cursor = 1; contexts = Any[];
+    hprev = nothing
+    cursor = 1
     for i in 1:length(decbs) # decoder time steps
-        print("start ")
         its = view(decx, cursor:(cursor+decbs[i]-1))
         hf = hf[:, 1:decbs[i]]
         cf = cf[:, 1:decbs[i]]
 
-        print(" i $i | size $(size(hf)) ")
+        hprev = hf
+
         # decode
         x_dec = wembed_d[:, its]
         h_dec, hf, cf = rnnforw(rdec, wrdec, x_dec, hf, cf, batchSizes=decbs[i:i], hy=true, cy=true)
         hf = reshape(hf, size(hf)[1], size(hf)[2])
         cf = reshape(cf, size(cf)[1], size(cf)[2])
 
-        print("i $i | size $(size(hf)) ")
         # attend
-        query1 = w_att2 * h_dec # h_dec single time-step decoder
+        query1 = w_att2 * hprev # hprev previous time step decoder
         query = hcat(query1, similar(query1, A, B-decbs[i]))
         q2 = reshape(query, (A, B, 1))
         q3 = tanh.(preatt2 .+ q2)
@@ -103,15 +111,16 @@ function predict(model, alldata)
         context1 = h_enc .* al1
         context2 = reshape(context1, H, B, T)
         context3 = reshape(sum(context2, 3), H, B)
-        context = context3[:, 1:decbs[i]] # remaining part is for not batched version
-        push!(contexts, context)
-        println("| $(size(context))")
+        context = context3[:, 1:decbs[i]] # remaining part is not used
+
+        # prediction layer
+        out = wy * vcat(context, h_dec) .+ by
     end
-    return contexts
+    return out
 end
 
 
-function loss(model, seq2seq; dropout=(0.0, 0.0, 0.0))
+function loss(model, alldata)
     
     
 end

@@ -84,7 +84,7 @@ function predict(model, alldata)
     hf = reshape(hf, size(hf)[1], size(hf)[2])
     cf = reshape(cf, size(cf)[1], size(cf)[2])
     hprev = nothing
-    cursor = 1
+    cursor = 1; outs= Any[];
     for i in 1:length(decbs) # decoder time steps
         its = view(decx, cursor:(cursor+decbs[i]-1))
         hf = hf[:, 1:decbs[i]]
@@ -115,8 +115,9 @@ function predict(model, alldata)
 
         # prediction layer
         out = wy * vcat(context, h_dec) .+ by
+        push!(outs, out)
     end
-    return out
+    return outs
 end
 
 

@@ -1,4 +1,4 @@
-# CMU Phoneme dict project for independeny study
+# CMU Phoneme dict project for independent study
 
 To run the code
 ```sh

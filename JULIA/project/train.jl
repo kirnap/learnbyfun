@@ -6,13 +6,13 @@ opts = Dict{}()
 ENEMBED = 8; get!(opts, :ENEMBED, ENEMBED)
 DEMBED = 16; get!(opts, :DEMBED, DEMBED);
 HIDDEN = 256; get!(opts, :HIDDEN, HIDDEN); 
-BATCHSIZE = 16; get!(opts, :BATCHSIZE, BATCHSIZE);
+BATCHSIZE = 1; get!(opts, :BATCHSIZE, BATCHSIZE);
 ATTENTION = 100; get!(opts, :ATTENTION,  ATTENTION);
 EPOCH = 10 ; get!(opts, :EPOCH, EPOCH);
 
 
 
-realdat = "data/cmudict.dict" # data directory
+realdat = "/KUFS/scratch/okirnap/project/data/cmudict.dict" # data directory
 function main()
     all_data = createData(realdat)
     data, envocab, devocab = all_data

@@ -5,9 +5,9 @@ include("data.jl")
 ENEMBED = 8
 DEMBED = 16
 HIDDEN = 256
-BATCHSIZE = 64
+BATCHSIZE = 1
 ATTENTION = 100
-EPOCH = 3
+EPOCH = 10
 
 realdat = "data/cmudict.dict" # data directory
 function main()
@@ -25,7 +25,6 @@ function main()
             update!(model, grads, optim)
             @show lval
             ltot += lval
-            
         end
         println("EPOCH $i loss $ltot")
     end        

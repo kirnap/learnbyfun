@@ -1,0 +1,7 @@
+* Basic Notes
+  1) Emacs interactive shell (REPL) is opened via : "M-x ielm" 
+  2) defun is used for function definition
+  3) if you define a function via let, then you need to call it via funcall
+
+
+

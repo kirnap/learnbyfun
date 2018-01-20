@@ -1,0 +1,13 @@
+** That file is to introduce text manipulation via common bash commands, e.g. sed, awk, tr.
+Let us say you have a foo.txt file containing a sentence:
+ "instruction": "Pick up the green cucumber and put it to the left of the orange speaker",
+However, you want to change it to that:
+  Pick up the green cucumber and put it to the left of the orange speaker
+To do that you need following lines  
+1) sed has nice s command for substition, here is an example of it
+   Desired command to achieve that cat foo.txt | sed s/'"instruction":'// 
+2) tr is useful for inplace replacement of undesired chars:
+   cat foo.txt | sed s/'"instruction":'// | tr '"' ' ' | tr ',' ' '
+3) Finally you need to remove the TAB spaces
+   cat foo.txt | sed s/'"instruction":'// | tr '"' ' ' | tr ',' ' ' | sed 's/^[ \t]*//'
+

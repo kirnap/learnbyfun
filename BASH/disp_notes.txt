@@ -1,0 +1,4 @@
+1. The ls, cat vs display seems broken, wheneever, I change the terminal size. Seems like the following commmand fix this issue:
+   - stty rows NUMBER, stty columns NUMBER 
+   
+   

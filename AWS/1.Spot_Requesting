@@ -1,0 +1,30 @@
+# This document is intended to gives step through AWS EC2 instance opening with a spot request.
+
+1. You need to chose a region from the top left menu, e.g. Ohio
+2. Click on the EC2 under the Compute from at the same page.
+3. New page opens, on the right side bar you will see Instances sub-part.
+4. Click on spot requests under instances, and within the upcoming page click on Request Spot Instances.
+5. There is requirements section under the new page, here you need to choose the correct instance type.
+6. Click on the search for AMI and select community AMIs and write Knet into the search bar
+7. Select the most updated version which is at the top
+8. Click on select at the right side of Requirements/Instance type(s).
+9. You need to choose 'GPU compute' from the Instance Type tab under new window.
+10. Choose p2.xlarge and click on select
+11. Go to the downmost part of the page and click on launch which will redirect you to your 'aws console'
+12. Here you need to watch 'Status' of your request, please refresh your page within a few seconds.
+13. When the status becomes 'fulfilled' you are ready to use your ec2 instance.
+14. Click on the EC2 Dashboard from the left side of the page.
+15. You will see 1 running instances on that page, click on that.
+16. The new page shows the status and network information about the machine running on the aws.
+17. To be able to succesfully connect your aws instance via ssh you need to create a .pem file within your aws-console.
+18. You need to again use the right-side bar of the aws-console page and go to Network & Security sub-part and click Key Pairs
+
+
+# How to connect your ec2 instance?
+1. After you are sure that you download your .pem file run the following command from your terminal
+   ssh -i your-pem-file ec2-user@your-ec2account@your-ec2-public-ip.compute.amazonaws.com
+
+
+# How to shut-down?
+1. Again from your aws menu choose shut-down under the actions
+

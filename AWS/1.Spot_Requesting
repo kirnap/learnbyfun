@@ -1,4 +1,4 @@
-# This document is intended to gives step through AWS EC2 instance opening with a spot request.
+# This document is intended to give steps through AWS EC2 instance opening with a spot request.
 
 1. You need to chose a region from the top left menu, e.g. Ohio
 2. Click on the EC2 under the Compute from at the same page.

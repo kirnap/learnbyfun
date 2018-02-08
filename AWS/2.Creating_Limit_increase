@@ -1,0 +1,12 @@
+# This document is intended to give steps through creating AWS-EC2 GPU powered instance request.
+
+1. Click on the Support from the banner and choose support center.
+2. New Page opens up, click on create case link.
+3. New Page opens up, choose Service Limit Increase from *Regarding session.
+4. Under limit type choose EC2 Instances
+5. Under region section choose Ohio (you may need additional permissions for the other regions)
+6. Primary Instance type choose p2.xlarge
+7. Choose new limit value 15 (or any other your favorite number:)
+8. Under contact method* choose your favorite contact method (preferably web if you don't want them to call you late in the night:)
+9. Use case description: Write down how you want these instances to conduct deep learning experiments for your term project.
+9. Click on submit. Done!

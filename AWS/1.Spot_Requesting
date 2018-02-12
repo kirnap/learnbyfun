@@ -1,7 +1,7 @@
 # This document is intended to give steps through AWS EC2 instance opening with a spot request.
 
 1. You need to chose a region from the top left menu, e.g. Ohio
-2. Click on the EC2 under the Compute from at the same page.
+2. Click on the EC2 under the Compute from the left bar at the same page.
 3. New page opens, on the right side bar you will see Instances sub-part.
 4. Click on spot requests under instances, and within the upcoming page click on Request Spot Instances.
 5. There is requirements section under the new page, here you need to choose the correct instance type.

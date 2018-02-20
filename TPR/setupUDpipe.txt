@@ -1,0 +1,27 @@
+1. Go to http://universaldependencies.org/conll18/data.html
+2. Click on (UDPipe)[http://ufal.mff.cuni.cz/udpipe] hyperlink
+   (http://ufal.mff.cuni.cz/udpipe) is your best friend for udpipe!
+3. Clone and go to the src directory
+4. Run make ---> You are done with the installation!
+
+How to run baseline models:
+1. You should have your pre-trained models along with the github
+2. http://ufal.mff.cuni.cz/udpipe/users-manual -> helps
+3. udpipe --tokenize --tag --parse udpipe_model -> to create .conllu file	
+
+TODO:
+1st week main focus(udpipe)
+- download pretrained models
+- Run baseline models (from balina)
+- Give Ozge and Cansin balina access
+- Learn evaluation metrics
+- Write a setup.sh script that defines (modeldir, correct udpipe version etc.) -> omer
+
+
+
+Useful notes:
+That function reads the conllu formatted file Make sure that you understand that function
+https://github.com/kirnap/ku-dependency-parser/blob/experiments/parser/preprocess.jl#41
+ HMW write a julia function that counts the number of words/sentences in .conllu file
+
+

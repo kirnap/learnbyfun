@@ -11,3 +11,8 @@
    ssh -i your-pemfile -f ec2-user@your-aws-public-ip.us-east-2.compute.amazonaws.com -L 8888:localhost:8888 -N
 
 7. Open up your favorite browser and paste the adress given by ipython notebook (e.g. see 5) Done!
+
+   What if terminal says port already in use? Well, best thing to do is to kill the process if your previous ssh command opens up that connection here is how to do it:
+   	- ps -aux | grep ssh => on linux
+	- ps -x | grep ssh => on mac
+   

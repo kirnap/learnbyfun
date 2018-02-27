@@ -1,0 +1,16 @@
+# To introduce julia macro expansions
+# You may find more useful information from:
+
+  https://docs.julialang.org/en/stable/manual/metaprogramming/
+
+Suppose you are going to write a macro such that it will take its arguments, then apply the function itself to the arguments
+and finally sum the results:
+
+```julia
+	macro mysum(f, x...)
+	   return Expr(:sum, Expr(:call, $f, $x...))
+	end	  
+```
+TODO:
+1. Better understand Expressions, take a look julia's official examples.
+2. Learn to distinguish make_expr vs. macro implementations (under the hood)

@@ -6,7 +6,16 @@
 4. Click on spot requests under instances, and within the upcoming page click on Request Spot Instances.
 5. There is requirements section under the new page, here you need to choose the correct instance type.
 6. Click on the search for AMI and select community AMIs and write Knet into the search bar
-7. Select the most updated version which is at the top
+7. Select knet-feb23... instance
+
+--- If you are submitting spot request for the first time, you need to create .pem file ---
+    To create .pem file
+    1. Find Key pair name subsection in the same page,
+    2. Click on create new key pair at the right side of Key pair name subsection
+    3. New page opens, name your key pair name with your favorite name
+    4. Go back to previous page, and click on refresh sign at the right side of create Key pair name subsection
+    5. Choose .pem file that you've just created in the 3rd step ->Done!, continue to 8.
+
 8. Click on select at the right side of Requirements/Instance type(s).
 9. You need to choose 'GPU compute' from the Instance Type tab under new window.
 10. Choose p2.xlarge and click on select

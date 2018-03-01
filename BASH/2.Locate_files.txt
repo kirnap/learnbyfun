@@ -1,0 +1,13 @@
+# In order to work with files from a specific directory:
+
+foofiles=(`ls foodir`) -> reads all the files from that directory
+for item in "${foofiels[@]}";do sth; done -> to iterate through files extracted from a specific directory
+
+2 Useful links for linux `find` command
+- https://linode.com/docs/tools-reference/tools/find-files-in-linux-using-the-command-line/
+- https://askubuntu.com/questions/333710/how-to-find-all-files-with-the-same-extension-within-a-directory
+
+
+Following paper has a linux command lines dataset you may need learn new commands while not doing ML applications:)
+- https://arxiv.org/pdf/1802.08979.pdf
+

@@ -24,11 +24,12 @@ end
 struct Tagger
     preds::Array
     sent::Sent
+    wptr::Int
 end
 
 
 function Tagger(s::Sent)
-    return Tagger([], s)
+    return Tagger([], s, 1)
 end
 
 import Base:copy, copy!
@@ -109,13 +110,16 @@ end
 function wordlstm(fmodel, bmodel, sentence, hsow, heow)
     fvecs = Array{Any}(length(sentence))
 
+    # gpu-cpu conversion
+    ftype = typeof(fmodel[1])
+    
     # forward lstm
     wforw, bforw = fmodel[1], fmodel[2]
     h0 = c0 = fill!(similar(bforw, 300, 1),0)
     (hidden, cell) = old_lstm(wforw, bforw, h0, c0, hsow)
     fvecs[1] = hidden
     for i in 1:length(sentence)-1
-        input = sentence.wvec[i]
+        input = ftype(sentence.wvec[i])
         (hidden, cell) = old_lstm(wforw, bforw, hidden, cell, input)
         fvecs[i+1] = hidden
     end
@@ -125,9 +129,9 @@ function wordlstm(fmodel, bmodel, sentence, hsow, heow)
     wback, bback = bmodel[1], bmodel[2]
     h0 = c0 = fill!(similar(bforw, 300, 1),0)
     (hidden, cell) = old_lstm(wback, bback, h0, c0, heow)
-    bvecs[end] = hidden
+    bvecs[end] = Array(hidden)
     for i in length(sentence):-1:2
-        input = sentence.wvec[i]
+        input = ftype(sentence.wvec[i])
         (hidden, cell) = old_lstm(wback, bback, hidden, cell, input)
         bvecs[i-1] = hidden
     end
@@ -135,11 +139,12 @@ function wordlstm(fmodel, bmodel, sentence, hsow, heow)
 end
 
 
-function fillwvecs!(corpus, model, cembed, sowchar, eowchar, unc, chvocab, sow_word, eow_word)
+function _fillwvecs!(corpus, model, cembed, sowchar, eowchar, unc, chvocab, sow_word, eow_word; gpufeats=false)
     for sentence in corpus
         for word in sentence
             h = charlstm(model, cembed, word, sowchar, eowchar, unc, chvocab)
-            push!(sentence.wvec, h)
+            h1 = (gpufeats ? h : Array(h))
+            push!(sentence.wvec, h1)
         end
     end
     hsow = charlstm(model, cembed, sow_word, sowchar, eowchar, unc, chvocab)
@@ -148,12 +153,20 @@ function fillwvecs!(corpus, model, cembed, sowchar, eowchar, unc, chvocab, sow_w
 end
 
 
-function fillcvecs!(corpus, fmodel, bmodel, hsow, heow)
+function _fillcvecs!(corpus, fmodel, bmodel, hsow, heow; gpufeats=false)
     for sentence in corpus
         fvecs, bvecs = wordlstm(fmodel, bmodel, sentence, hsow, heow)
-        map(i->push!(sentence.fvec, i), fvecs)
-        map(i->push!(sentence.bvec, i), bvecs)
+        f = (gpufeats ? KnetArray{Float32} : Array{Float32})
+        map(i->push!(sentence.fvec, f(i)), fvecs)
+        map(i->push!(sentence.bvec, f(i)), bvecs)
     end
+end
+
+
+function fillallvecs!(corpus, state)
+    (cembed, cmodel, fmodel, bmodel, soc, eoc, unc, chvocab, sow, eow) = state
+    hsow, heow = _fillwvecs!(corpus, cmodel, cembed, soc, eoc, unc, chvocab, sow, eow)
+    _fillcvecs!(corpus, fmodel, bmodel, hsow, heow)
 end
 
 
@@ -163,8 +176,12 @@ function load_lm(lmfile)
     soc = chvocab[_all["sowchar"]]; eoc = chvocab[_all["eowchar"]]; 
     unc = chvocab[_all["unkchar"]]
     sow  = _all["sosword"]; eow=_all["eosword"];
-    fmodel = _all["forw"]; bmodel = _all["back"];
-    cmodel = _all["char"]; cembed = _all["cembed"]
+
+    fmodel = (gpu() >= 0 ? map(x->convert(KnetArray, x), _all["forw"]) : _all["forw"])
+    bmodel = (gpu() >= 0 ? map(x->convert(KnetArray, x), _all["back"]) : _all["back"])
+    cmodel = (gpu() >= 0 ? map(x->convert(KnetArray, x), _all["char"]) : _all["char"])
+    cembed = (gpu() >= 0 ? convert(KnetArray, _all["cembed"]) : _all["cembed"])
+
     state = (cembed, cmodel, fmodel, bmodel, soc, eoc, unc, chvocab, sow, eow)
     return state
 end

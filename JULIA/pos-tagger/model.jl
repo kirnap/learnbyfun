@@ -44,11 +44,14 @@ function initmodel(featdim, hiddens)
     push!(model, tagger)
 end
 
+
 function main()
     # Load data
     corpus = load_conllu(trainfile)
-
-
-
-
+    
+    # Load pre-trained model
+    bundle = load_lm(lm_model)
+    #(cembed, cmodel, fmodel, bmodel, soc, eoc, unc, chvocab, sow, eow) = bundle
+    fillallvecs!(corpus, bundle)
+    global omer = corpus
 end

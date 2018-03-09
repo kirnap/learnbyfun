@@ -66,7 +66,7 @@ julia> using Juno; Juno.connect(8008)
 * After a few seconds, you will receive a notification from Atom indicating the
 connection is successful from the top right menu:<br/>
 <img
-src="https://github.com/kirnap/learnbyfun/blob/master/AWS/juno_tutorial/img/juno_success1.png?raw=true" alt="success_foto" style="height:150px;width:200px;"/>
+src="https://github.com/kirnap/learnbyfun/blob/master/AWS/juno_tutorial/img/juno_success1.png?raw=true" alt="success_foto" style="height:50px;width:100px;"/>
 * **Now you are ready to run your julia code on the remote server.**
 
 ### Running code blocks

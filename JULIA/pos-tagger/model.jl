@@ -26,11 +26,11 @@ end
 
 
 
-function initmodel(featdim, hiddens)
-    posnum = 17 # number of postags
+function initmodel(featdim, hiddens, dpostag)
+    posnum = 17 # number of unique postags
     model = Any[]
     # initialize postags
-    for (k, n, d) in ((:postag, posnum, dpostag)) 
+    for (k, n, d) in ((:postag, posnum, dpostag),) 
         push!(model, [ initr(d) for i in 1:n ])
     end
 
@@ -44,14 +44,59 @@ function initmodel(featdim, hiddens)
     push!(model, tagger)
 end
 
+function windim(wptr::Int, slen::Int, wlen::Int)
+    if wptr + wlen > slen
+        toright = (wptr+1):slen
+    else
+        toright = (wptr+1):(wptr+wlen)
+    end
+    return toright
+
+    # TODO: implement toleft
+    # extensive check for both toleft and toright
+end
+
+# Possible features for a word in the buffer
+# 1. word, forw and back vectors (350 + 300 + 300) in window sized 3
+# You need to calcute the features ±3 tokens centered at the current token (wptr)
+
+
+# 2. At most 4 previous predicted pos-tags (posdim * 4)
+
+function features(model, taggers, feats)
+    pvec0 = zeros(model[1])
+    fmatrix = []
+    for t in taggers
+        w = t.wptr
+        if 'v' in feats
+            push!(fmatrix, t.sent.wvec[w])
+        end
+        if 'c' in feats
+            push!(fmatrix, t.sent.fvec[w])
+            push!(fmatrix, t.sent.bvec[w])
+        end
+        
+    end
+end
+
 
 function main()
     # Load data
-    corpus = load_conllu(trainfile)
-    
-    # Load pre-trained model
+    #corpus = load_conllu(trainfile)
+
+    # dbg 
+    corpus = load_conllu("foo2.conllu")
+
+    # fill context and word embeddings from  pre-trained model
     bundle = load_lm(lm_model)
-    #(cembed, cmodel, fmodel, bmodel, soc, eoc, unc, chvocab, sow, eow) = bundle
     fillallvecs!(corpus, bundle)
-    global omer = corpus
+
+    # Initialize model
+    POSEMBEDDINGS = 128
+    featdim = 950 + POSEMBEDDINGS*4
+    hiddens = [2048]
+    all_model = initmodel(featdim, hiddens, POSEMBEDDINGS)
+    return all_model
 end
+
+

@@ -42,7 +42,7 @@ Your Atom is now a Julia IDE.
 * Search for ```Julia Client: Connect External Process``` and click on it.
 * A pop up that shows you the **served port number** will appear:
 
-<img src="https://github.com/kirnap/learnbyfun/blob/master/AWS/juno_tutorial/img/juno_external.png?raw=true" alt="Drawing" style="height:200px;width:500px;"/>
+<img src="https://github.com/kirnap/learnbyfun/blob/master/AWS/juno_tutorial/img/juno_external.png?raw=true" alt="Drawing" style="height:100px;width:300px;"/>
 
 Here ```51838``` is the port that Juno is listening to.  
 
@@ -67,7 +67,7 @@ julia> using Juno; Juno.connect(8008)
 * After a few seconds, you will receive a notification from Atom indicating the
 connection is successful from the top right menu:<br/>
 <img
-src="https://github.com/kirnap/learnbyfun/blob/master/AWS/juno_tutorial/img/juno_success1.png?raw=true" alt="success_foto" style="width:450px;"/>
+src="https://github.com/kirnap/learnbyfun/blob/master/AWS/juno_tutorial/img/juno_success1.png?raw=true" alt="success_foto" style="width:350px;"/>
 * **Now you are ready to run your julia code on the remote server.**
 
 ### Running code blocks
@@ -80,7 +80,7 @@ src="https://github.com/kirnap/learnbyfun/blob/master/AWS/juno_tutorial/img/juno
 <br/>
 The outputs will be
 printed to the terminal window where you established the connection.
-<img src="https://github.com/kirnap/learnbyfun/raw/master/AWS/juno_tutorial/img/console_output.png" alt="Drawing" style="height:250px; width:590px" />
+<img src="https://github.com/kirnap/learnbyfun/raw/master/AWS/juno_tutorial/img/console_output.png" alt="Drawing" style="height:200px; width:400px" />
 
 
 #### Workspace

@@ -21,7 +21,7 @@ function Sent()
 end
 
 
-struct Tagger
+mutable struct Tagger
     preds::Array
     sent::Sent
     wptr::Int
@@ -40,8 +40,10 @@ function copy!(dst::Tagger, src::Tagger)
 end
 
 
-copy(src::Tagger)=copy!(Tagger(similar(src.preds), src.sent), src)
-move!(t::Tagger, m::PosTag) = (push!(t.preds, m);return nothing)
+copy(src::Tagger)=copy!(Tagger(similar(src.preds), src.sent, src.wptr), src)
+moveok(t::Tagger)=(length(t.sent) >= t.wptr)
+_move!(t::Tagger, m::PosTag) = (push!(t.preds, m);t.wptr+=1;return nothing)
+move!(t::Tagger, m::PosTag)  = (moveok(t) ? _move!(t, m) : error("Not any valid moves"))
 
 
 function Base.:(==)(t1::Tagger, t2::Tagger)

@@ -40,9 +40,8 @@ Your Atom is now a Julia IDE.
 * Open Julia console in Atom by hitting ```Ctrl/Cmd + O``` and terminate the console (if running) by hitting ```Ctrl + D```
 * Hit ```Ctrl/Cmd+Shift+P``` in Atom.
 * Search for ```Julia Client: Connect External Process``` and click on it.
-* A pop up that shows you the **served port number** will appear:
-
-<img src="https://github.com/kirnap/learnbyfun/blob/master/AWS/juno_tutorial/img/juno_external.png?raw=true" alt="Drawing" style="height:100px;width:300px;"/>
+* A pop up that shows you the **served port number** will appear:<br/>
+<img src="https://github.com/kirnap/learnbyfun/blob/master/AWS/juno_tutorial/img/juno_external.png?raw=true" alt="Drawing" style="height:100px;width:200px;"/>
 
 Here ```51838``` is the port that Juno is listening to.  
 

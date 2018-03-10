@@ -22,9 +22,9 @@ end
 
 
 mutable struct Tagger
-    preds::Array
+    preds::Array{PosTag}
     sent::Sent
-    wptr::Int
+    wptr::Int32
 end
 
 

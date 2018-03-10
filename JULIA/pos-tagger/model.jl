@@ -1,4 +1,5 @@
 using Knet, JLD
+using AutoGrad: cat1d
 include("preprocess.jl")
 # Let's work with English-Lines Data
 trainfile = "/ai/data/nlp/conll17/ud-treebanks-v2.0/UD_English-LinES/en_lines-ud-train.conllu"
@@ -16,6 +17,7 @@ function initx(d...; ftype=Float32)
     end
 end
 
+
 function initr(d...; ftype=Float32, GPUFEATS=false)
     if gpu() >=0 && GPUFEATS
         KnetArray{ftype}(xavier(d...))
@@ -23,7 +25,6 @@ function initr(d...; ftype=Float32, GPUFEATS=false)
         Array{ftype}(xavier(d...))
     end    
 end
-
 
 
 function initmodel(featdim, hiddens, dpostag)
@@ -46,7 +47,7 @@ end
 
 
 # To calcute the features ±3 tokens centered at the current token (wptr)
-function winwords(wptr::Int, slen::Int64, wlen::Int64)
+function winwords(wptr::Int32, slen::Int64, wlen::Int64)
     if wptr + wlen > slen
         toright = (wptr+1):slen
     else
@@ -94,12 +95,46 @@ function features(model, taggers, feats, wlen=3)
                 push!(fmatrix, wvec0)
             end
         end
+
         if 'c' in feats
+            lcount = length(tL)
+            for i in 1:(wlen-lcount)
+                push!(fmatrix, fvec0)
+                push!(fmatrix, bvec0)
+            end
+            for i in tL
+                push!(fmatrix, t.sent.fvec[i])
+                push!(fmatrix, t.sent.bvec[i])
+            end
             push!(fmatrix, t.sent.fvec[w])
             push!(fmatrix, t.sent.bvec[w])
+
+            rcount=length(tR)
+            for i in tR
+                push!(fmatrix, t.sent.fvec[i])
+                push!(fmatrix, t.sent.bvec[i])
+            end
+            for i in 1:(wlen-rcount)
+                push!(fmatrix, fvec0)
+                push!(fmatrix, bvec0)
+            end
+        end
+
+        # prev-postag
+        p = length(t.preds)
+        prevs = (p >= 4 ? ((p-4+1):p) : 1:p)
+        for i in prevs
+            push!(fmatrix, model[t.preds[i]])
+        end
+        s = 4-length(prevs)
+        for i in 1:s
+            push!(fmatrix, pvec0)
         end
     end
-    return fmatrix
+    fmatrix = cat1d(fmatrix...)
+    ncols = length(taggers)
+    nrows = div(length(fmatrix), ncols)
+    return reshape(fmatrix, nrows, ncols)
 end
 
 
@@ -116,10 +151,10 @@ function main()
 
     # Initialize model
     POSEMBEDDINGS = 128
-    featdim = 950 + POSEMBEDDINGS*4
+    featdim = 950 + POSEMBEDDINGS*4 # We have much more features
     hiddens = [2048]
     all_model = initmodel(featdim, hiddens, POSEMBEDDINGS)
-    return all_model
+    return (all_model,corpus)
 end
 
 

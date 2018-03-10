@@ -44,39 +44,62 @@ function initmodel(featdim, hiddens, dpostag)
     push!(model, tagger)
 end
 
-function windim(wptr::Int, slen::Int, wlen::Int)
+
+# To calcute the features ±3 tokens centered at the current token (wptr)
+function winwords(wptr::Int, slen::Int64, wlen::Int64)
     if wptr + wlen > slen
         toright = (wptr+1):slen
     else
         toright = (wptr+1):(wptr+wlen)
     end
-    return toright
 
-    # TODO: implement toleft
-    # extensive check for both toleft and toright
+    if wptr - wlen <= 0
+        toleft = 1:(wptr-1)
+        #toleft = wptr-1:-1:1
+    else
+        #toleft = wptr-1:-1:(wptr-wlen) reverted!
+        toleft = (wptr-wlen):(wptr-1)
+    end
+    return toleft, toright
 end
+
 
 # Possible features for a word in the buffer
 # 1. word, forw and back vectors (350 + 300 + 300) in window sized 3
-# You need to calcute the features ±3 tokens centered at the current token (wptr)
-
-
 # 2. At most 4 previous predicted pos-tags (posdim * 4)
-
-function features(model, taggers, feats)
+function features(model, taggers, feats, wlen=3)
     pvec0 = zeros(model[1])
+    wvec0 = zeros(taggers[1].sent.wvec[1])
+    fvec0 = bvec0 = zeros(taggers[1].sent.fvec[1])
     fmatrix = []
     for t in taggers
         w = t.wptr
+        (tL, tR) = winwords(w, length(t.sent), wlen)
         if 'v' in feats
+            lcount = length(tL)
+            for i in 1:(wlen-lcount)
+                push!(fmatrix, wvec0)
+            end
+            for i in tL
+                push!(fmatrix,t.sent.wvec[i])
+            end
+
             push!(fmatrix, t.sent.wvec[w])
+
+            rcount=length(tR)
+            for i in tR
+                push!(fmatrix, t.sent.wvec[i])
+            end
+            for i in 1:(wlen-rcount)
+                push!(fmatrix, wvec0)
+            end
         end
         if 'c' in feats
             push!(fmatrix, t.sent.fvec[w])
             push!(fmatrix, t.sent.bvec[w])
         end
-        
     end
+    return fmatrix
 end
 
 

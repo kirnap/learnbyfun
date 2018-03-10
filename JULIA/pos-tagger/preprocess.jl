@@ -168,6 +168,7 @@ end
 function fillallvecs!(corpus, state)
     (cembed, cmodel, fmodel, bmodel, soc, eoc, unc, chvocab, sow, eow) = state
     hsow, heow = _fillwvecs!(corpus, cmodel, cembed, soc, eoc, unc, chvocab, sow, eow)
+    info("Generating context and word embeddings...")
     _fillcvecs!(corpus, fmodel, bmodel, hsow, heow)
 end
 

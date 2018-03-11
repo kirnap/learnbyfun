@@ -16,6 +16,7 @@ next(s::Sent, state)=(return (s.word[state], state+1))
 done(s::Sent, state)=(state>length(s.word))
 length(s::Sent)=length(s.word)
 
+
 function Sent()
     Sent([],[],[],[],[])
 end
@@ -45,6 +46,7 @@ moveok(t::Tagger)=(length(t.sent) >= t.wptr)
 _move!(t::Tagger, m::PosTag) = (push!(t.preds, m);t.wptr+=1;return nothing)
 move!(t::Tagger, m::PosTag)  = (moveok(t) ? _move!(t, m) : error("Not any valid moves"))
 isdone(t::Tagger)=!moveok(t)
+goldtag(t::Tagger)=(t.sent.postag[t.wptr])
 
 
 function Base.:(==)(t1::Tagger, t2::Tagger)

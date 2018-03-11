@@ -3,7 +3,7 @@ const PosTag = UInt8 # 17 distinct universal POS-tag
 
 struct Sent
     word::Array
-    postag::Array
+    postag::Array{PosTag}
     wvec::Array
     fvec::Array
     bvec::Array
@@ -44,6 +44,7 @@ copy(src::Tagger)=copy!(Tagger(similar(src.preds), src.sent, src.wptr), src)
 moveok(t::Tagger)=(length(t.sent) >= t.wptr)
 _move!(t::Tagger, m::PosTag) = (push!(t.preds, m);t.wptr+=1;return nothing)
 move!(t::Tagger, m::PosTag)  = (moveok(t) ? _move!(t, m) : error("Not any valid moves"))
+isdone(t::Tagger)=!moveok(t)
 
 
 function Base.:(==)(t1::Tagger, t2::Tagger)
@@ -187,6 +188,17 @@ function load_lm(lmfile)
 
     state = (cembed, cmodel, fmodel, bmodel, soc, eoc, unc, chvocab, sow, eow)
     return state
+end
+
+
+function minibatch1(corpus, batchsize; minlen=2, shuf=false, maxlen=64)
+    data = Any[]
+    sorted = sort(corpus, by=length)
+    for i in 1:batchsize:length(corpus)
+        j = min(length(corpus), i+batchsize-1)
+        push!(data, sorted[i:j])
+    end
+    return data
 end
 
 

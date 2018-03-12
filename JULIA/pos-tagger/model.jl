@@ -7,6 +7,32 @@ devfile   = "/ai/data/nlp/conll17/ud-treebanks-v2.0/UD_English-LinES/en_lines-ud
 lm_model = "/ai/data/nlp/conll17/competition/chmodel_converted/english_chmodel.jld"
 
 # Initializations
+# optimization parameter creator for parameters
+oparams{T<:Number}(::KnetArray{T},otype; o...)=otype(;o...)
+oparams{T<:Number}(::Array{T},otype; o...)=otype(;o...)
+oparams(a::Associative,otype; o...)=Dict(k=>oparams(v,otype;o...) for (k,v) in a)
+oparams(a,otype; o...)=map(x->oparams(x,otype;o...), a)
+
+
+
+# using AutoGrad
+# let cat_r = recorder(cat); global vcatn, hcatn
+#     function vcatn(a...)
+#         if any(x->isa(x,Rec), a)
+#             cat_r(1,a...)
+#         else
+#             vcat(a...)
+#         end
+#     end
+#     function hcatn(a...)
+#         if any(x->isa(x,Rec), a)
+#             cat_r(2,a...)
+#         else
+#             hcat(a...)
+#         end
+#     end
+# end
+
 
 # xavier initialization
 function initx(d...; ftype=Float32)
@@ -47,7 +73,7 @@ end
 
 
 # To calcute the features ±3 tokens centered at the current token (wptr)
-function winwords(wptr::Int32, slen::Int64, wlen::Int64)
+function winwords(wptr::Number, slen::Int64, wlen::Int64)
     if wptr + wlen > slen
         toright = (wptr+1):slen
     else
@@ -74,7 +100,8 @@ function features(model, taggers, feats, wlen=3)
     fvec0 = bvec0 = zeros(taggers[1].sent.fvec[1])
     fmatrix = []
     for t in taggers
-        w = t.wptr
+        w = (isdone(t) ? length(t.sent) : t.wptr) # This will fix done issue!
+
         (tL, tR) = winwords(w, length(t.sent), wlen)
         if 'v' in feats
             lcount = length(tL)
@@ -137,24 +164,133 @@ function features(model, taggers, feats, wlen=3)
     return reshape(fmatrix, nrows, ncols)
 end
 
+# All uggly 1s is not to overwrite Knet's predefined functions!!
+
+function mlp1(w, input;pdrop=(0.0, 0.0)) 
+    x = dropout(input, pdrop[1])
+    for i in 1:2:length(w)-2
+        x = relu.(w[i] * x .+ w[i+1])
+        x = dropout(x, pdrop[2])
+    end
+    return w[end-1]*x .+ w[end]
+end
+
+
+
+
+function oracleloss(model, sentences, feats; lval=[], pdrop=(0.0, 0.0))
+    taggers = map(Tagger, sentences)
+    taggersdone = map(isdone, taggers)
+    totalloss = 0.0
+    featmodel, mlpmodel = model[1], model[2]
+
+    while !all(taggersdone)
+        fmatrix = features(featmodel, taggers, feats)
+        if gpu() >= 0
+            fmatrix = KnetArray(fmatrix)
+        end
+        scores = mlp1(mlpmodel, fmatrix, pdrop=pdrop)
+        logprobs = logp(scores, 1)
+        for (i, t) in enumerate(taggers)
+            taggersdone[i] && continue
+            goldind = goldtag(t)
+            cval = logprobs[goldind, i]
+            totalloss -= cval
+            move!(t, goldind)
+            (isdone(t) ? taggersdone[i]=true : nothing)
+        end
+    end
+    ntot = mapreduce(length, +, 0, sentences)
+    push!(lval, (AutoGrad.getval(totalloss)/ntot))
+    return totalloss / ntot
+end
+
+oraclegrad = grad(oracleloss)
+
+
+function oracletrain(model, corpus, feats, opts, batchsize, lval=[]; pdrop=nothing)
+    sentbatches = minibatch1(corpus, batchsize)
+    lval = []
+    for sentences in sentbatches
+        ograds = oraclegrad(model, sentences, feats, lval=lval, pdrop=pdrop)
+        update!(model, ograds, opts)
+    end
+    avgloss = mean(lval)
+    return avgloss
+end
+
+
+function oracleacc(model, corpus, feats, batchsize; pdrop=(0.0, 0.0))
+    sentbatches = minibatch1(corpus, batchsize)
+    ntot = ncorr = 0
+    for sentences in sentbatches
+        taggers = map(Tagger, sentences)
+        taggersdone = map(isdone, taggers)
+        totalloss = 0.0
+        featmodel, mlpmodel = model[1], model[2]
+
+        while !all(taggersdone)
+            fmatrix = features(featmodel, taggers, feats)
+            if gpu() >= 0
+                fmatrix = KnetArray{Float32}(fmatrix)
+            end
+            scores = Array(mlp1(mlpmodel, fmatrix, pdrop=pdrop))
+            (_, indx) = findmax(scores, 1)
+            #logprobs = logp(scores, 1) # no need to logprobability
+            for (i, t) in enumerate(taggers)
+                taggersdone[i] && continue
+                pred_tag = indx[i] - (i-1) * 17 # To get cartesian index
+
+                # goldind = goldtag(t);#move!(t, goldind)
+                #cval = logprobs[goldind, i]
+                #totalloss -= cval
+                move!(t, UInt8(pred_tag))
+                if isdone(t)
+                    taggersdone[i] = true
+                    ncorr += sum(t.preds .== t.sent.postag)
+                end
+                #(isdone(t) ? taggersdone[i]=true : nothing)
+            end
+        end
+        ntot += mapreduce(length, +, 0, sentences)
+    end
+    return ncorr / ntot
+end
+
 
 function main()
     # Load data
     #corpus = load_conllu(trainfile)
 
     # dbg 
-    corpus = load_conllu("foo2.conllu")
+    corpus = load_conllu(trainfile)
+    dev = load_conllu(devfile)
 
     # fill context and word embeddings from  pre-trained model
     bundle = load_lm(lm_model)
-    fillallvecs!(corpus, bundle)
+    fillallvecs!(corpus, bundle); fillallvecs!(dev, bundle);
 
     # Initialize model
+    feats = "cv"
+    batchsize = 2
     POSEMBEDDINGS = 128
-    featdim = 950 + POSEMBEDDINGS*4 # We have much more features
+    featdim = 7162 # 300*14 + 350*7 + 128*4 (context + word + embedding vectors)
     hiddens = [2048]
-    all_model = initmodel(featdim, hiddens, POSEMBEDDINGS)
-    return (all_model,corpus)
+    model = initmodel(featdim, hiddens, POSEMBEDDINGS)
+    opts = oparams(model, Adam; gclip=5.0)
+
+    acc1 = oracleacc(model, dev, feats, batchsize; pdrop=(0.0, 0.0))
+    println("Initial dev accuracy $acc1")
+    for i in 1:10
+        lval = []
+        lss = oracletrain(model, corpus, feats, opts, batchsize, lval; pdrop=(0.5, 0.5))
+        trnacc = oracleacc(model, corpus, feats, batchsize; pdrop=(0.0, 0.0))
+        acc1 = oracleacc(model, dev, feats, batchsize; pdrop=(0.0, 0.0))
+        println("Loss val $lss trn acc $trnacc tst acc $acc1 ...")
+    end
+
+
+    
 end
 
 

@@ -48,7 +48,7 @@ _move!(t::Tagger, m::PosTag) = (push!(t.preds, m);t.wptr+=1;return nothing)
 move!(t::Tagger, m::PosTag)  = (moveok(t) ? _move!(t, m) : error("Not any valid moves"))
 isdone(t::Tagger)=!moveok(t)
 goldtag(t::Tagger)=(t.sent.postag[t.wptr])
-goldpath(t::Tagger) = t1.sent.postag
+goldpath(t::Tagger) = t.sent.postag
 
 function Base.:(==)(t1::Tagger, t2::Tagger)
     for f in fieldnames(t1)

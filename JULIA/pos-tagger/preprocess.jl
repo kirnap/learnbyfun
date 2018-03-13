@@ -16,7 +16,6 @@ next(s::Sent, state)=(return (s.word[state], state+1))
 done(s::Sent, state)=(state>length(s.word))
 length(s::Sent)=length(s.word)
 
-
 function Sent()
     Sent([],[],[],[],[])
 end
@@ -33,21 +32,23 @@ function Tagger(s::Sent)
     return Tagger([], s, 1)
 end
 
-import Base:copy, copy!
+import Base:copy, copy!, show
+
 function copy!(dst::Tagger, src::Tagger)
     #dpreds = copy(src.preds)
     copy!(dst.preds, src.preds)
     return dst
 end
 
-
+# General utility functions
+show(io::IO, t::Tagger) = print(io, t.preds)
 copy(src::Tagger)=copy!(Tagger(similar(src.preds), src.sent, src.wptr), src)
 moveok(t::Tagger)=(length(t.sent) >= t.wptr)
 _move!(t::Tagger, m::PosTag) = (push!(t.preds, m);t.wptr+=1;return nothing)
 move!(t::Tagger, m::PosTag)  = (moveok(t) ? _move!(t, m) : error("Not any valid moves"))
 isdone(t::Tagger)=!moveok(t)
 goldtag(t::Tagger)=(t.sent.postag[t.wptr])
-
+goldpath(t::Tagger) = t1.sent.postag
 
 function Base.:(==)(t1::Tagger, t2::Tagger)
     for f in fieldnames(t1)

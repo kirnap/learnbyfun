@@ -14,26 +14,6 @@ oparams(a::Associative,otype; o...)=Dict(k=>oparams(v,otype;o...) for (k,v) in a
 oparams(a,otype; o...)=map(x->oparams(x,otype;o...), a)
 
 
-
-# using AutoGrad
-# let cat_r = recorder(cat); global vcatn, hcatn
-#     function vcatn(a...)
-#         if any(x->isa(x,Rec), a)
-#             cat_r(1,a...)
-#         else
-#             vcat(a...)
-#         end
-#     end
-#     function hcatn(a...)
-#         if any(x->isa(x,Rec), a)
-#             cat_r(2,a...)
-#         else
-#             hcat(a...)
-#         end
-#     end
-# end
-
-
 # xavier initialization
 function initx(d...; ftype=Float32)
     if gpu() >=0
@@ -257,40 +237,141 @@ function oracleacc(model, corpus, feats, batchsize; pdrop=(0.0, 0.0))
     return ncorr / ntot
 end
 
+# Some beam search utility functions
+branchstop(member) = member[3] 
+branchgold(member) = member[end-1]
+ingold(v::Array{UInt8}, big::Array{UInt8})=(v==view(big, 1:length(v)))
+containsgold(p::Array{Any, 1})=any(map(branchgold, p))
+allstop(p::Array{Any, 1})=all(map(branchstop, p))
 
-function main()
+# Beam representation: (scoreval, moves, isstop, isgold, tagger)
+function beamtrain(model, feats, sentences, beamwidth)
+    tagger = Tagger(first(sentences)) # Batchsize is 1
+    cbeams = Any[(0.0, UInt8[], false, false, tagger)]
+    gpath = goldpath(tagger)
+
+    prevbeams = cbeams
+    while !allstop(cbeams)
+        cbeams = movebeam(model, feats, prevbeams, gpath, beamwidth)
+        if containsgold(cbeams)
+            prevbeams = cbeams
+        else # gold fallen
+            break
+        end
+    end
+
+    # 1. You need to normalize over paths based on n best value
+    # 2. If gold path fallen out initially 
+    if lenth(prevbeams) == 1 # goldpath falled initially?
+        print(".") # To warn myself
+
+        # put the gold path manually
+        prevbeams = movebeam(model, feats, prevbeams, gpath, beamwidth)
+        desired = [(0.0, UInt8[tagger.sent.postag], true, true, copy(tagger))]
+        push!(prevbeams, desired)
+    end
+    
+    goldin = find(x->goldbranch(prevbeams))
+    @assert length(goldin == 1);goldin = goldin[1] # sanity check
+    all_paths = [ i[2] for i in prevbeams ]
+    all_taggers = [ copy(tagger) for i in 1:length(prevbeams) ]
+    ntot = length(prevbeams)
+    for i in 1:length(all_paths[goldin]) # only move through gold path
+        indx = map(k->all_paths[k][i]+(k-1)*17, 1:ntot) # convert cartesian index ugly 17!
+        fmatrix = features(featmodel, all_taggers, feats)
+        #if gpu() >= 0 ? fmatrix = KnetArray(fmatrix);end;
+    end
+
+    
+end
+
+
+function movebeam(model, feats, cbeams, gpath, beamwidth; pdrop=nothing)
+    ret = Any[]
+    featmodel, mlpmodel = model[1], model[2]
+
+    for beam in cbeams
+        if branchstop(beam); push!(ret, beam); continue;end; # Don't touch stopped beams
+
+        scoreval, acts, isstop, isgold, tagger = beam
+        fmatrix = features(featmodel, [tagger], feats)
+        fmatrix = (gpu() >= 0 ? KnetArray(fmatrix) : fmatrix)
+        scores = mlp1(mlpmodel, fmatrix, pdrop=pdrop) # size(scores) 17,1
+
+        if isdone(tagger)
+            push!(ret, (scoreval, acts, true, isgold, tagger))
+            continue
+        end
+
+        # Every move is available, no need for cartesian change: batchsize 1
+        for i in 1:17 # 17 UPOSTAG
+            t_new = copy(tagger); move!(t_new, UInt8(i)); new_act = copy(acts); push!(new_act, UInt8(i));
+            cand = (scoreval + scores[i], new_act, isstop, ingold(new_act, gpath), t_new)
+            push!(ret, cand)
+        end
+    end
+    n = (length(ret) >= beamwidth ? beamwidth : length(ret))
+    return sort!(ret, by=x->x[1], rev=true)[1:n] # get n best 
+end
+
+
+function oraclemain()
     # Load data
-    #corpus = load_conllu(trainfile)
-
-    # dbg 
-    corpus = load_conllu(trainfile)
-    dev = load_conllu(devfile)
-
+    #corpus = dev =load_conllu("foo4.conllu") ;savemode=true;#dbg
+    corpus = load_conllu(trainfile); dev = load_conllu(devfile); savemode=false
+    
     # fill context and word embeddings from  pre-trained model
     bundle = load_lm(lm_model)
     fillallvecs!(corpus, bundle); fillallvecs!(dev, bundle);
 
     # Initialize model
     feats = "cv"
-    batchsize = 2
-    POSEMBEDDINGS = 128
-    featdim = 7162 # 300*14 + 350*7 + 128*4 (context + word + embedding vectors)
+    batchsize = 16
+    POSEMBEDDINGS = 128#256
+    featdim =  300*14 + 350*7 + POSEMBEDDINGS*4 #(context + word + embedding vectors)
     hiddens = [2048]
     model = initmodel(featdim, hiddens, POSEMBEDDINGS)
     opts = oparams(model, Adam; gclip=5.0)
 
     acc1 = oracleacc(model, dev, feats, batchsize; pdrop=(0.0, 0.0))
     println("Initial dev accuracy $acc1")
-    for i in 1:10
+    for i in 1:40
         lval = []
-        lss = oracletrain(model, corpus, feats, opts, batchsize, lval; pdrop=(0.5, 0.5))
+        lss = oracletrain(model, corpus, feats, opts, batchsize, lval; pdrop=(0.5, 0.8))
         trnacc = oracleacc(model, corpus, feats, batchsize; pdrop=(0.0, 0.0))
         acc1 = oracleacc(model, dev, feats, batchsize; pdrop=(0.0, 0.0))
-        println("Loss val $lss trn acc $trnacc tst acc $acc1 ...")
+        if savemode
+            JLD.save("pos_experiment.jld", "model", model, "optims", opts)
+            println("Loss val $lss trn acc $trnacc tst acc $acc1 ...")
+            i==5 && break
+        end
+        !savemode && println("Loss val $lss trn acc $trnacc tst acc $acc1 ...")
     end
-
-
-    
 end
 
+
+function beammain(;prevmodel=nothing)
+    # load-data
+    #corpus, dev = load_conllu(trainfile), load_conllu(devfile)
+    #fillallvecs!(corpus, load_lm(lm_model)); fillallvecs!(dev, load_lm(lm_model));
+    #prevmodel="pos_experiment.jld"
+
+    # dbg
+    corpus = load_conllu("foo4.conllu"); fillallvecs!(corpus, load_lm(lm_model));
+
+    sentbatches = minibatch1(corpus, 1) # ugly batchsize
+
+    # Initmodel
+    if prevmodel == nothing
+        POSEMBEDDINGS = 128
+        featdim = 300*14 + 350*7 + POSEMBEDDINGS*4 #(context + word + embedding vectors)
+        hiddens = [2048]
+        model = initmodel(featdim, hiddens, POSEMBEDDINGS)
+    else
+        model, opts = JLD.load(prevmodel, "model", "optims")
+    end
+
+    return sentbatches, model
+    
+end
 

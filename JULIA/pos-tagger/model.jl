@@ -287,7 +287,6 @@ function beamloss(model, feats, sentences, beamwidth; lval=[], pdrop=nothing)
     if length(prevbeams) == 1 # goldpath fallen initially?
         print("+"); flush(STDOUT);# To warn myself
 
-        #omerdbg[:prevbeams2] = prevbeams; ######### DBG
         desired = (0.0, UInt8[tagger.sent.postag[1]], true, true, copy(tagger))
         push!(cbeams, desired)
         prevbeams = cbeams
@@ -298,7 +297,7 @@ function beamloss(model, feats, sentences, beamwidth; lval=[], pdrop=nothing)
         goldmove = gtagger.sent.postag[length(gtagger.preds)+1] # an expected move to take in the next step
 
         
-        # manually calculate the score values
+        # manually calculate the score values, and add next gold move manually
         fmatrix = features(featmodel, [gtagger], feats)
         fmatrix = (gpu() >= 0 ? KnetArray(fmatrix) : fmatrix)
         scores = mlp1(mlpmodel, fmatrix, pdrop=pdrop) # size(scores) 17,1
@@ -307,7 +306,6 @@ function beamloss(model, feats, sentences, beamwidth; lval=[], pdrop=nothing)
         desired = (gscoreval+scores[Int(goldmove)], new_act, isdone(t_new), true, t_new)
         push!(cbeams, desired) # manually put the correct one
 
-        # global omer = (prevbeams, cbeams, model, feats, prevbeams, gpath, beamwidth, pdrop, sanity); error("uzucu errors are not finishing anymore"); # dbg
         prevbeams = cbeams
     else
         # everything is ok keep going
@@ -322,9 +320,7 @@ function beamloss(model, feats, sentences, beamwidth; lval=[], pdrop=nothing)
     end
 
     if length(goldin) != 1
-        #omerdbg[:prevbeams] = prevbeams; omerdbg[:model] = model; omerdbg[:cbeams] = cbeams;
-        #omerdbg[:gpath] = gpath; omerdbg[:beamwidth] = beamwidth; omerdbg[:feats] = feats; omerdbg[:pdrop]=pdrop;
-        error("uzucu bir error")
+        error("Unexpected error put more than one gold?")
     end
     goldin = goldin[1]
     #@assert length(goldin) == 1; goldin = goldin[1] # sanity check
@@ -366,7 +362,6 @@ function movebeam(model, feats, cbeams, gpath, beamwidth; pdrop=nothing)
         fmatrix = features(featmodel, [tagger], feats)
         fmatrix = (gpu() >= 0 ? KnetArray(fmatrix) : fmatrix)
         scores = mlp1(mlpmodel, fmatrix, pdrop=pdrop) # size(scores) 17,1
-
 
         # Every move is available, no need for cartesian change: batchsize 1
         for i in 1:17 # 17 UPOSTAG

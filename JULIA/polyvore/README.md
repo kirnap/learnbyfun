@@ -5,4 +5,5 @@ All the implementations are written in Knet (julia).
 
 ### Contact
 Author: Omer Kirnap
+
 Email: okirnap@ku.edu.tr

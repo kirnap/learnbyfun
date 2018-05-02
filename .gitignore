@@ -13,6 +13,9 @@ noun_google_data
 .LSOverride
 *.q
 
+## .jld files
+*.jld
+
 # python
 *.pyc
 

@@ -214,3 +214,25 @@ function accuracy(model, alldata)
     end
     return ncorrect/ntot
 end
+
+
+function create_catvocab(jsonfile)
+    catvocab = Dict{}()
+    bigdata = JSON.parsefile(jsonfile)
+    for data in bigdata
+        imgs = data["items"]
+        for i in imgs
+            ((i["name"] == "polyvore" || i["name"] == "") && continue)
+            (length(img_seq) > 8 && break); # Todo: we may need more
+            cid = i["index"];
+            if haskey(catvocab, cid)
+                if !(i["name"] in catvocab[cid])
+                    push!(catvocab[cid], i["name"])
+                end
+            else
+                catvocab[cid] = Any[]; push!(catvocab[cid], i["name"]);
+            end
+        end
+    end
+    return catvocab
+end

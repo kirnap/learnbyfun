@@ -68,14 +68,16 @@ function minibatch1(;batchsize=32, tdata=nothing)
 end
 
 
-function minibatch2(;batchsize=32, tdata=nothing, ncols=nothing)
+function minibatch2(;batchsize=32, tdata=nothing, ncols=nothing, ss=nothing, se=nothing)
     if tdata == nothing
         tdata = JLD.load("data/train_data.jld")
         tdata = filter(x->length(x)>2, tdata["dataset"])
     end
     ret = Any[];
-    ss = randn(Float32, 2048); se = randn(Float32, 2048);i2=length(tdata)
-    find_cids(x) = map(t->t.cid, x)
+    if ss==nothing
+        ss = randn(Float32, 2048); se = randn(Float32, 2048);
+    end
+    find_cids(x) = map(t->t.cid, x);i2=length(tdata);
     for i=1:batchsize:i2
         j = min(i2, i+batchsize-1)
         sij   = sort(tdata[i:j],by=length, rev=true) # mb those sents
@@ -126,7 +128,7 @@ function minibatch2(;batchsize=32, tdata=nothing, ncols=nothing)
         state = ((hcat(mx_f...), bs_f),(hcat(mx_b...), bs_b), ygolds)
         push!(ret, state)
     end
-    return ret 
+    return ret, ss, se 
 end
 
 
@@ -216,21 +218,51 @@ function accuracy(model, alldata)
 end
 
 
+function predict(model, instance)
+    (mx_f, bs_f), (mx_b, bs_b), ygolds = mdata
+    r_f, wr_f = flstm(model); r_b, wr_b = blstm(model);
+    inforw = wembed(model)*(gpu()>=0 ? KnetArray(mx_f) : mx_f)
+    inback = wembed(model)*(gpu()>=0 ? KnetArray(mx_b) : mx_b)
+    hforws, = rnnforw(r_f, wr_f, inforw, batchSizes=bs_f)
+    hbacks, = rnnforw(r_b, wr_b, inback, batchSizes=bs_b)
+    softin  = vcat(hforws, hbacks[:, end:-1:1]) # reverse the backward lstm
+    scores = wsoft(model) * softin .+ bsoft(model)
+    logprobs  = vec(Array(scores))#logp(scores, 1)
+    return sortperm(logprobs, rev=true)    
+end
+
+
+function propfmod(seqid, imds, remodel) # process for model
+    # assume you are given cid and img ids
+    seqpath = string("data/images/", seqid, "/")
+    sort!(imds) # make sure that the ids are sorted
+    inputs = Any[]
+    for i in imds
+        impath = joinpath(seqpath, string(i, ".jpg"))
+        vivec  = get_imvec(impath, resmodel)
+        push!(inputs, vivec)
+    end
+    return inputs
+end
+
+
 function create_catvocab(jsonfile)
     catvocab = Dict{}()
     bigdata = JSON.parsefile(jsonfile)
     for data in bigdata
         imgs = data["items"]
+        (length(imgs) < 3 && continue); img_seq = [];
         for i in imgs
             ((i["name"] == "polyvore" || i["name"] == "") && continue)
             (length(img_seq) > 8 && break); # Todo: we may need more
-            cid = i["index"];
-            if haskey(catvocab, cid)
-                if !(i["name"] in catvocab[cid])
-                    push!(catvocab[cid], i["name"])
+            category = i["categoryid"]; cid = i["index"];
+            push!(img_seq, 1) # actually no need but put for the rush
+            if haskey(catvocab, category)
+                if !(i["name"] in catvocab[category])
+                    push!(catvocab[category], i["name"])
                 end
             else
-                catvocab[cid] = Any[]; push!(catvocab[cid], i["name"]);
+                catvocab[category] = Any[]; push!(catvocab[category], i["name"]);
             end
         end
     end

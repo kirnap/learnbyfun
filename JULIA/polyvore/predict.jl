@@ -12,6 +12,8 @@ function predme()
     inputs = map(x->reshape(x, length(x), 1), inputs)
     f = (gpu()>= 0 ? KnetArray : Array)
     in2lstm = map(x->wembed(model)*f(x), inputs)
+    
     # give half of them to forward and the other to backward
+    r_f, wr_f = flstm(model); r_b, wr_b = blstm(model);
     
 end

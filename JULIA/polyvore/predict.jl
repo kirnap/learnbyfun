@@ -1,12 +1,17 @@
 include("train.jl")
 
-function predme(seqid, imds)
-    resmodel = create_resmodel()
+function input(prompt::String="")
+    print(prompt)
+    return chomp(readline())
+end
+
+function predme(seqid, imds; resmodel=nothing, bundle=nothing)
+
     # for debug purposes
-    seqid = 31011385
-    imds = [5,2,4,1]
+    #seqid = 31011385
+    #imds = [5,2,4,1]
     sort!(imds)
-    bundle = JLD.load("600_all_best_model.jld")
+
     model, ss, se = bundle["model"], bundle["ss"], bundle["se"]
     inputs = propfmod(seqid, imds, resmodel)
     unshift!(inputs, ss); push!(inputs, se);
@@ -26,7 +31,21 @@ function predme(seqid, imds)
     softin = reshape(vcat(hy_forw[:,end], hy_back[:,end]), 1200,1)
     scores = wsoft(model) * softin  .+ bsoft(model)
     indx = sortperm(vec(Array(scores)), rev=true)
-    catvocab = create_catvocab("data/label/train_no_dup.json")
-    return indx, catvocab
-    
+    return indx
 end
+
+
+function main_pred(;bundle=nothing)
+    if bundle == nothing
+        bundle = JLD.load("600_all_best_model.jld")
+    end
+    resmodel = create_resmodel()
+    seqid = input("What is image id: ")
+    imds  = input("Enter the image ")
+    imds = map(parse, split(imds))
+    catvocab = create_catvocab("data/label/train_no_dup.json")
+    indx = predme(seqid, imds, resmodel=resmodel, bundle=bundle)
+    return indx
+end
+
+

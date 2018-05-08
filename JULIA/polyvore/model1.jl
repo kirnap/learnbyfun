@@ -246,9 +246,11 @@ function propfmod(seqid, imds, resmodel) # process for model
 end
 
 
-function create_catvocab(jsonfile)
+function create_catvocab(jsonfile; mode=1)
     catvocab = Dict{}()
-    bigdata = JSON.parsefile(jsonfile)
+    if mode == 1
+        bigdata = JSON.parsefile(jsonfile)
+    end
     for data in bigdata
         imgs = data["items"]
         (length(imgs) < 3 && continue); img_seq = [];

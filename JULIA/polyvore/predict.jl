@@ -35,17 +35,36 @@ function predme(seqid, imds; resmodel=nothing, bundle=nothing)
 end
 
 
-function main_pred(;bundle=nothing)
+function naive_suggest(catvocab, indx, top, suggest_text)
+    result = nothing
+    for i in 1:top
+        my_items = get(catvocab, indx[i], 46) # Todo: fix hardcoded
+        c1 = find(x->contains(x, suggest_text), my_items)
+        if !isempty(c1)
+            return my_items[first(c1)]
+        end
+    end
+    return result
+end
+
+
+function main_pred(;bundle=nothing, top=5)
+    metadata = JSON.parsefile("data/label/train_no_dup.json")
     if bundle == nothing
         bundle = JLD.load("600_all_best_model.jld")
     end
     resmodel = create_resmodel()
     seqid = input("What is image id: ")
+    find(x->x["set_id"]==parse(seqid))
     imds  = input("Enter the image ")
     imds = map(parse, split(imds))
     catvocab = create_catvocab("data/label/train_no_dup.json")
     indx = predme(seqid, imds, resmodel=resmodel, bundle=bundle)
-    return indx
+    s1 = input("Do you want to enter text: ")
+    if "y" || "yes" == s1
+        sequence_text = input("What do you want: ")
+    end
+    return indx, catvocab, metadata
 end
 
 

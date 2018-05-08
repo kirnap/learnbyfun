@@ -232,7 +232,7 @@ function predict(model, instance)
 end
 
 
-function propfmod(seqid, imds, remodel) # process for model
+function propfmod(seqid, imds, resmodel) # process for model
     # assume you are given cid and img ids
     seqpath = string("data/images/", seqid, "/")
     sort!(imds) # make sure that the ids are sorted

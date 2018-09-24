@@ -10,7 +10,7 @@ end
 # Used to calculate polynomial's value
 function (p::Polynomial)(x) 
     v = p.coeffs[end]
-    for k in 1:length(v)
+    for k in (length(p.coeffs)-1:-1:1)
         v = v*x + p.coeffs[k]
     end
     return v[end]

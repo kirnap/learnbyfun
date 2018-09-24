@@ -1,0 +1,14 @@
+[push]
+        default = simple
+[format]
+        pretty = format:%h %ad %s
+[log]
+        date = short
+[user]
+	name = kirnap
+	email = okirnap@ku.edu.tr
+
+[alias]
+	st = status
+	pom = push origin master
+	plom = pull origin master

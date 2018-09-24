@@ -18,6 +18,8 @@ end
 
 (p::Polynomial)() = p(5) # to define default caller
 
+# In the function body p refers to the object that was called. You basically play with fields of a struct to generate desired results by 'calling an object'
+
 #=
 julia> p = Polynomial([1,10,100])
 Polynomial{Int64}([1, 10, 100])

@@ -10,4 +10,4 @@ conda env list # To list environment names
 conda list # to see what is installed in your conda env
 conda remove -n your-env-name # to remove your env
 ```
-Please search conda your-package-name from searc banner in [official conda page](https://anaconda.org/)
+Please search conda your-package-name from search banner in [official conda page](https://anaconda.org/)

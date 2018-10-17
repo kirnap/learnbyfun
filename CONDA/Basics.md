@@ -3,7 +3,7 @@ Conda is a pip-virtualenv like package manager containing its own pip, python an
 
 ## How to install conda
 1. You need to download the conda installer (either miniconda -lightweight- or anaconda -containing data-science packages-) from [miniconda link](https://conda.io/miniconda.html)
-2. chmod +x your-installer
+2. ```chmod +x your-installer```
 3. Specify your .local dir
 4. Add to your path
 

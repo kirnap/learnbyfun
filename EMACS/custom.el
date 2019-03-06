@@ -25,3 +25,7 @@
   (beginning-of-line (or (and arg (1+ arg)) 2))
   (if (and arg (not (= 1 arg))) (message "%d lines copied" arg)))
 
+;; in order to add keybinding for your specific function:
+(global-set-key (kbd "C-c a") 'copy-line) ;; sets the short-cut
+;; Check the following repo for more detailed function notes
+;; https://github.com/hypernumbers/learn_elisp_the_hard_way/blob/master/contents/lesson-4-2-adding-custom-functions-to-emacs.rst

@@ -1,0 +1,3 @@
+# suppose you are given a foo.txt file where each unique "word" is seperated by " " then the following command counts the number of unique words
+
+```cat foo.txt | tr ' ' '\n' | sort | uniq -c | sort -nr```

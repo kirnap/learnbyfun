@@ -1,4 +1,6 @@
 ** That file is to introduce text manipulation via common bash commands, e.g. sed, awk, tr.
+
+Example 1:
 Let us say you have a foo.txt file containing a sentence:
  "instruction": "Pick up the green cucumber and put it to the left of the orange speaker",
 However, you want to change it to that:
@@ -10,4 +12,13 @@ To do that you need following lines
    cat foo.txt | sed s/'"instruction":'// | tr '"' ' ' | tr ',' ' '
 3) Finally you need to remove the TAB spaces
    cat foo.txt | sed s/'"instruction":'// | tr '"' ' ' | tr ',' ' ' | sed 's/^[ \t]*//'
+
+Example 2:
+Suppose you want to check the specific line of a .txt like file:
+1) You may find sed useful: (e.g. line 4-9)
+   sed -n '4,9p;10q' your-file-name
+
+
+
+
 

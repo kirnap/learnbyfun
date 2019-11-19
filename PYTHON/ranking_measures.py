@@ -1,6 +1,8 @@
 # Taken from:
 # https://gist.github.com/bwhite/3726239 , for revisited version:
 # https://gist.github.com/kell18/beee8a6c72879d56b7d61b520f8a2b65
+# for the blog post:
+# http://fastml.com/evaluating-recommender-systems/
 def dcg_at_k(r, k, method=0):
     """Score is discounted cumulative gain (dcg)
     Relevance is positive real values.  Can use binary

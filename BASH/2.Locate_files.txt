@@ -8,6 +8,12 @@ for item in "${foofiels[@]}";do sth; done -> to iterate through files extracted 
 - https://askubuntu.com/questions/333710/how-to-find-all-files-with-the-same-extension-within-a-directory
 
 
+3. If you are looking for specific patterns under certain directories you may use the following line of linux command:
+
+`grep -rnw '/path/to/somewhere/' -e 'pattern'`
+
+
+
 Following paper has a linux command lines dataset you may need learn new commands while not doing ML applications:)
 - https://arxiv.org/pdf/1802.08979.pdf
 

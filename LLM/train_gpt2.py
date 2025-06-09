@@ -3,7 +3,7 @@ Personal Notes:
 
 1. There's DDP overhead with a single GPU:
 
-    (vp1) omer@verapulse build-nanogpt % python train_gpt2.py 
+    (vp1) omer@verapulse build-nanogpt % python train_gpt2.py
     DDP is not enabled using device cuda
     -> total desired batch size:  524288
     -> calculated gradient accumulation steps: 32
@@ -23,7 +23,7 @@ Personal Notes:
     step    8| loss: 7.713205 | lr: 5.4000e-04 | norm: 1.9201  | dt: 2714.45ms | tok/sec: 193147.21
     step    9| loss: 7.346015 | lr: 6.0000e-04 | norm: 1.8049  | dt: 2714.71ms | tok/sec: 193128.73
     step   10| loss: 7.028761 | lr: 6.0000e-04 | norm: 1.8351  | dt: 2715.57ms | tok/sec: 193067.10
-    
+
     (vp1) omer@verapulse build-nanogpt % torchrun --standalone --nproc_per_node=1 train_gpt2.py
     -> total desired batch size:  524288
     -> calculated gradient accumulation steps: 32
@@ -43,7 +43,7 @@ Personal Notes:
     step    8| loss: 7.713212 | lr: 5.4000e-04 | norm: 1.9197  | dt: 2810.93ms | tok/sec: 186517.52
     step    9| loss: 7.346024 | lr: 6.0000e-04 | norm: 1.8048  | dt: 2811.33ms | tok/sec: 186491.01
     step   10| loss: 7.028761 | lr: 6.0000e-04 | norm: 1.8352  | dt: 2813.80ms | tok/sec: 186327.22
-    
+
 2. Maximum microbatch for 5090 is 40 * 1024 -> which is around ~50K tokens per second
 
 """
@@ -58,6 +58,7 @@ from torch.nn import functional as F
 import torch.nn as nn
 import torch.optim.optimizer
 import inspect
+import numpy as np
 
 # config parameters
 USE_COMPILE = True
@@ -281,12 +282,22 @@ class GPT(nn.Module):
 import tiktoken
 
 
+def load_tokens(filename):
+    npt = np.load(filename)
+    ptt = torch.tensor(npt, dtype=torch.long)
+    return ptt
+
+
+# TODO: Karpathy's video 3.18:26 to start modification
+
+
 class DataLoaderLite:
-    def __init__(self, B, T, process_rank, num_processes):
+    def __init__(self, B, T, process_rank, num_processes, split):
         self.B = B
         self.T = T
         self.process_rank = process_rank
         self.num_processes = num_processes
+        assert split in {'train', 'val'}
         
         # at init load tokens from disk and store them in memory
         SH_DIR = '/home/omer/data/tiny_shakespeare/input.txt'
